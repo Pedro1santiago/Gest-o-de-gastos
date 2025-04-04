@@ -1,65 +1,78 @@
 💼 Gestão de Gastos (Expenses)
 
-Gestão de Gastos é um aplicativo desenvolvido em Flutter para ajudar no gerenciamento financeiro, permitindo o controle de receitas e despesas de forma intuitiva.
+Bem-vindo ao repositório do Gestão de Gastos, um aplicativo Flutter para gerenciamento de despesas pessoais.
 
-🛠️ Tecnologias Utilizadas
+
+
+📚 Sobre o Projeto
+
+Este projeto tem como objetivo auxiliar os usuários no controle de suas finanças, permitindo o cadastro de despesas, categorização e visualização de gráficos para melhor gestão financeira.
+
+
+
+⚙️ Tecnologias Utilizadas
 
 Flutter (Dart)
 
-Provider para gerenciamento de estado
+Provider (Gerenciamento de Estado)
 
-Sqflite para armazenamento local
+SQLite (Banco de Dados Local)
 
-Firebase para autenticação e armazenamento na nuvem (opcional)
+Gráficos e Widgets Customizados
 
-✨ Funcionalidades
 
-Adicionar, editar e excluir despesas e receitas
 
-Categorização de gastos
+🛠️ Como Executar o Projeto
 
-Geração de relatórios gráficos
 
-Sincronização com Firebase (se habilitado)
-
-🛠️ Como Configurar o Projeto
-
-Clone o repositório:
+1. Clone o Repositório
 
 git clone https://github.com/Pedro1santiago/Gest-o-de-gastos.git
-
-Acesse o diretório do projeto:
-
 cd Gest-o-de-gastos
 
-Instale as dependências:
+2. Instale as Dependências
 
 flutter pub get
 
-Execute o projeto:
+3. Execute o Aplicativo
 
 flutter run
 
-🌟 Como Contribuir
+Certifique-se de ter um emulador ou dispositivo físico configurado.
 
-Crie um fork do repositório.
+📝 Estrutura do Projeto
 
-Crie uma nova branch para suas mudanças:
+/
+|-- android/     # Configuração para Android
+|-- ios/         # Configuração para iOS
+|-- lib/         # Código fonte principal
+|   |-- models/  # Modelos de dados
+|   |-- screens/ # Telas do app
+|   |-- widgets/ # Componentes reutilizáveis
+|-- assets/      # Ícones, imagens e fontes
+|-- pubspec.yaml # Dependências do Flutter
 
-git checkout -b minha-feature
 
-Faça commit das alterações:
 
-git commit -m "Adiciona nova funcionalidade X"
 
-Envie para o repositório remoto:
+🌟 Funcionalidades Principais
 
-git push origin minha-feature
+✅ Adicionar e excluir despesas
 
-Abra um Pull Request no GitHub.
+✅ Categorizar despesas
 
-📃 Licença
+✅ Visualizar gráficos de gastos
 
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+✅ Suporte para temas escuro/claro
 
-Desenvolvido por Pedro Henrique Santiago Siqueira ✨
+
+
+📢 Contribuição
+
+Sinta-se à vontade para abrir issues e enviar pull requests! Qualquer sugestão ou melhoria é bem-vinda.
+
+🎮 Licença
+
+Este projeto está sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
+
+👉 Desenvolvido por Pedro Henrique Santiago Siqueira
