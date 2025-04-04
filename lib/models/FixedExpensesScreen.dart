@@ -14,7 +14,6 @@ class _FixedExpensesScreenState extends State<FixedExpensesScreen> {
   final List<Map<String, dynamic>> _fixedExpenses = [];
   double _salary = 0;
   bool _showSalary = true;
-
   final TextEditingController _salaryController = TextEditingController();
   final NumberFormat currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
@@ -28,53 +27,45 @@ class _FixedExpensesScreenState extends State<FixedExpensesScreen> {
     Colors.pink
   ];
 
-  void _formatSalaryInput(String value) {
+  void _onSalaryInputChanged(String value) {
     String newValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (newValue.isEmpty) {
-      setState(() {
-        _salary = 0;
-      });
-      return;
-    }
+    if (newValue.isEmpty) return;
 
     double parsedValue = double.parse(newValue) / 100;
     _salaryController.value = TextEditingValue(
       text: currencyFormat.format(parsedValue),
       selection: TextSelection.collapsed(offset: currencyFormat.format(parsedValue).length),
     );
+  }
 
+  void _confirmSalary() {
     setState(() {
-      _salary = parsedValue;
+      _salary = double.tryParse(_salaryController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      _salary /= 100;
+    });
+  }
+
+  void _toggleSalaryVisibility() {
+    setState(() {
+      _showSalary = !_showSalary;
     });
   }
 
   void _addFixedExpense(String title, double value) {
+    String capitalizedTitle = title.split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+
     setState(() {
-      _fixedExpenses.add({'title': title, 'value': value});
+      _fixedExpenses.add({'title': capitalizedTitle, 'value': value});
     });
   }
 
-  List<PieSeries<Map<String, dynamic>, String>> _getPieChartSections() {
-    List<Map<String, dynamic>> chartData = List.from(_fixedExpenses);
-    double totalExpenses = _fixedExpenses.fold(0, (sum, item) => sum + item['value']);
-
-    double remainingSalary = _salary - totalExpenses;
-    if (remainingSalary > 0) {
-      chartData.add({'title': 'Restante do Salário', 'value': remainingSalary});
-    }
-
-    return [
-      PieSeries<Map<String, dynamic>, String>(
-        dataSource: chartData,
-        xValueMapper: (Map<String, dynamic> expense, _) => expense['title'],
-        yValueMapper: (Map<String, dynamic> expense, _) => expense['value'],
-        dataLabelSettings: const DataLabelSettings(
-          isVisible: true,
-          labelPosition: ChartDataLabelPosition.outside,
-        ),
-        pointColorMapper: (expense, index) => _chartColors[index % _chartColors.length],
-      ),
-    ];
+  void _removeFixedExpense(int index) {
+    setState(() {
+      _fixedExpenses.removeAt(index);
+    });
   }
 
   void _showAddExpenseDialog() {
@@ -96,7 +87,9 @@ class _FixedExpensesScreenState extends State<FixedExpensesScreen> {
               TextField(
                 controller: valueController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^[0-9]+([,.][0-9]{0,2})?'))],
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^[0-9]+([,.][0-9]{0,2})?'))
+                ],
                 decoration: const InputDecoration(labelText: 'Valor'),
               ),
             ],
@@ -124,40 +117,49 @@ class _FixedExpensesScreenState extends State<FixedExpensesScreen> {
     );
   }
 
+  List<PieSeries<Map<String, dynamic>, String>> _getPieChartSections() {
+  List<Map<String, dynamic>> chartData = [];
+
+  if (_salary > 0) {
+    double totalExpenses = _fixedExpenses.fold(0, (sum, item) => sum + item['value']);
+    for (var expense in _fixedExpenses) {
+      int percent = ((expense['value'] / _salary) * 100).round();
+      chartData.add({
+        'title': '${expense['title']} ($percent%)',
+        'value': percent.toDouble(),
+      });
+    }
+
+    int remaining = (100 - (totalExpenses / _salary * 100)).round();
+    if (remaining > 0) {
+      chartData.add({
+        'title': 'Saldo ($remaining%)',
+        'value': remaining.toDouble(),
+      });
+    }
+  }
+
+  return [
+    PieSeries<Map<String, dynamic>, String>(
+      dataSource: chartData,
+      xValueMapper: (Map<String, dynamic> expense, _) => expense['title'],
+      yValueMapper: (Map<String, dynamic> expense, _) => expense['value'],
+      dataLabelSettings: const DataLabelSettings(
+        isVisible: true,
+        labelPosition: ChartDataLabelPosition.outside,
+        labelIntersectAction: LabelIntersectAction.shift,
+        textStyle: TextStyle(fontSize: 12),
+      ),
+      pointColorMapper: (expense, index) => _chartColors[index % _chartColors.length],
+    ),
+  ];
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Controle de Gastos'),
         backgroundColor: Colors.purple,
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.purple),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Página Inicial'),
-              onTap: () {
-                Navigator.of(context).pushReplacementNamed('/');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money),
-              title: const Text('Gastos Fixos'),
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -172,42 +174,75 @@ class _FixedExpensesScreenState extends State<FixedExpensesScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _showSalary ? 'Salário: ${currencyFormat.format(_salary)}' : 'Salário: ******',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        _showSalary ? Icons.visibility : Icons.visibility_off,
+                      'Salário: ${_showSalary ? currencyFormat.format(_salary) : '******'}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _showSalary = !_showSalary;
-                        });
-                      },
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            _showSalary ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.white,
+                          ),
+                          onPressed: _toggleSalaryVisibility,
+                        ),
+                        if (_salary > 0)
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            onPressed: () {
+                              setState(() {
+                                _salary = 0;
+                                _salaryController.clear();
+                              });
+                            },
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                controller: _salaryController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Digite seu salário',
-                  labelStyle: TextStyle(color: Colors.purple),
+            if (_salary == 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: TextField(
+                  controller: _salaryController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(labelText: 'Digite seu salário'),
+                  onChanged: _onSalaryInputChanged,
+                  onSubmitted: (_) => _confirmSalary(),
                 ),
-                onChanged: _formatSalaryInput,
               ),
-            ),
             if (_salary > 0 && _fixedExpenses.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: SfCircularChart(series: _getPieChartSections()),
               ),
+            ..._fixedExpenses.asMap().entries.map((entry) {
+              int index = entry.key;
+              Map<String, dynamic> expense = entry.value;
+              return Card(
+                margin: const EdgeInsets.all(8),
+                child: ListTile(
+                  title: Text(expense['title']),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(currencyFormat.format(expense['value'])),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _removeFixedExpense(index),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),
